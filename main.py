@@ -36,8 +36,7 @@ predefined_status = [
     "overthinking last bet"
 ]
 
-
-
+# TODO comment
 def extractBetween(input, start, start_delimiter, end_delimiter):
     inWord = False
     ret = ""
@@ -60,7 +59,7 @@ def extractBetween(input, start, start_delimiter, end_delimiter):
 
     return {"ret":ret, "jump":i}
 
-# DONE
+# TODO comment, output end of file
 def getTitle(input):
     ret = ""
     inTitle = False
@@ -91,24 +90,39 @@ def getOptions(input):
     emoji_list = []
 
     i = -1
-    while i < len(input)-1:
+    counter = 0
+    while True:
         i+=1
+        if i > len(input)-1:
+            break
+
         char = input[i]
 
         if char == "[":
+# TODO tests
             obj = extractBetween(input, i, "[", "]")
-            # TODO tests
+            
             i = obj["jump"]
-            text_list.append(obj["ret"])
+            i+=1 # count up, to catch the next character
+            char = input[i] # update char when modifying i
 
-        if char == "{":
-            obj = extractBetween(input, i, "{", "}")
-            i = obj["jump"]
-            emoji_list.append(obj["ret"])
+            text_list.append(obj["ret"])
+            counter += 1
+            
+            # do not out of bounce
+            if (i + 1) > len(input):
+                emoji_list.append(predefined_emojis[counter]) # no emoji is following, append the default emoji
+            else:
+                # emoji is following, extract it
+                if char == "{":
+                    obj = extractBetween(input, i, "{", "}")
+                    i = obj["jump"]
+                    char = input[i] # update char when modifying i
+                    emoji_list.append(obj["ret"])
+                    # TODO test if valid emoji
+                else:
+                    emoji_list.append(predefined_emojis[counter]) # no emoji is following, append the default emoji
         
-    if len(text_list) != len(emoji_list):
-        i = 0
-        while i < len(text_list):
 
 
 
