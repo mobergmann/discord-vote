@@ -1,43 +1,24 @@
-import datetime
-import discord
-import json
-import re
-
 # represents a new version of the poll discord bot
 # it can create a poll using emojis to vote
 # 
 # the command to create a new poll is:
 # !vote | !poll {a questionable topic to discuss with your friends} [Option A] [optional emoji to replace the current one] [Option B] ...
 
-command_pattern = re.compile("^!((vote)|(poll)) {[\w ]+}(( \[[\w ]+\])({.*})?){2,10}$") # see http://regexr.com/56use
+import datetime
+import discord
+import json
+import re
 
-option_pattern = re.compile("(\[((\w)|( ))+\])({.*})?")
-option_title_pattern = re.compile("(\[[\w ]+\])")
+command_pattern = re.compile("^!((vote)|(poll)) {[\w ]+}(( \[[\w ]+\])({.*})?){2,10}$") # http://regexr.com/56use
+command_beginning_pattern = re.compile("^!(vote)|(poll) {[\w ]+} ")
+
+option_pattern = re.compile("\[w+\]({.*})?")
+option_title_pattern = re.compile("(\[[\w]+\])")
 option_emoji_pattern = re.compile("({.*})?")
 
 # default emojis
 predefined_emojis = [
-    ":regional_indicator_a:",
-    ":regional_indicator_b:",
-    ":regional_indicator_c:",
-    ":regional_indicator_d:",
-    ":regional_indicator_e:",
-    ":regional_indicator_f:",
-    ":regional_indicator_g:",
-    ":regional_indicator_h:",
-    ":regional_indicator_i:",
-    ":regional_indicator_j:",
-    ":regional_indicator_k:",
-    ":regional_indicator_l:",
-    ":regional_indicator_m:",
-    ":regional_indicator_n:",
-    ":regional_indicator_o:",
-    ":regional_indicator_p:",
-    ":regional_indicator_q:",
-    ":regional_indicator_r:",
-    ":regional_indicator_s:",
-    ":regional_indicator_t:",
-    ":regional_indicator_u:"
+    "0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"
 ]
 
 predefined_status = [
@@ -55,29 +36,29 @@ predefined_status = [
     "overthinking last bet"
 ]
 
+
+
 def extractBetween(input, start, start_delimiter, end_delimiter):
     inWord = False
     ret = ""
 
-    i = 0
+    i = -1
     for char in input:
         i+=1
 
-        if i != start or not inWord: # skip all literals to the start position
+        if i < start:
             continue
-        
-        if char == end_delimiter or i > len(input):
-            break
-
-        if char == start_delimiter:
+        elif char == start_delimiter:
             inWord = True
+            continue
+        elif char == end_delimiter:
+            break
+        elif not inWord: # skip all literals to the start position
             continue
 
         ret += char
 
-    return ret
-
-
+    return {"ret":ret, "jump":i}
 
 # DONE
 def getTitle(input):
@@ -101,53 +82,80 @@ def getTitle(input):
 
     return ret
 
-
 # TODO
 def getOptions(input):
     # creates a list of options with or without emojis
-    tmp_list = re.findall(option_pattern, input)
+    # tmp_list = re.findall(option_pattern, input)
     
     text_list = []
     emoji_list = []
 
     i = -1
-    for elem in tmp_list:
-        elem = elem[0]
+    while i < len(input)-1:
         i+=1
+        char = input[i]
 
-        # region extract text
+        if char == "[":
+            obj = extractBetween(input, i, "[", "]")
+            # TODO tests
+            i = obj["jump"]
+            text_list.append(obj["ret"])
+
+        if char == "{":
+            obj = extractBetween(input, i, "{", "}")
+            i = obj["jump"]
+            emoji_list.append(obj["ret"])
         
-        text_match = re.search(option_title_pattern, elem) # search the option for text (used for retriving the start and stop indices)
-        text_list.append(elem[text_match.start()+1 : text_match.end()-1]) # [text] cut the [ and the ] off, so only the text is left
+    if len(text_list) != len(emoji_list):
+        i = 0
+        while i < len(text_list):
+
+
+
+# region old
+    # i = -1
+    # for elem in tmp_list:
+    #     elem = elem[0]
+    #     i+=1
+
+    #     # region extract text
         
-        # endregion
+    #     text_match = re.search(option_title_pattern, elem) # search the option for text (used for retriving the start and stop indices)
+    #     text_list.append(elem[text_match.start()+1 : text_match.end()-1]) # [text] cut the [ and the ] off, so only the text is left
         
-        # region extract emoji
+    #     # endregion
         
-        emoji_match = re.search(option_emoji_pattern, elem)
-        if not emoji_match: # if not a match set the default emoji and skip to the next iteration
-            emoji_list.append(predefined_emojis[i])
-            continue
+    #     # region extract emoji
+        
+    #     # TODO remove two lines
+    #     emoji_list.append(predefined_emojis[i])
+    #     continue
+
+    #     emoji_match = re.search(option_emoji_pattern, elem)
+    #     if not emoji_match: # if not a match set the default emoji and skip to the next iteration
+    #         emoji_list.append(predefined_emojis[i])
+    #         continue
     
-        emoji = elem[emoji_match.start()+1 : emoji_match.end()-1]
+    #     emoji = elem[emoji_match.start()+1 : emoji_match.end()-1]
 
-        # TODO check for is_usable()
-        # TODO emoji does not exist
-        # if not an emoji emoji already used, or emoji is a predefined emoji, override it with the matching emoji at position i
-        if emoji in emoji_list or emoji in predefined_emojis: # TODO may change emoji_match to not None
-            emoji_list.append(predefined_emojis[i])
-            continue
+    #     # TODO check for is_usable()
+    #     # TODO emoji does not exist
+    #     # if not an emoji emoji already used, or emoji is a predefined emoji, override it with the matching emoji at position i
+    #     if emoji in emoji_list or emoji in predefined_emojis: # TODO may change emoji_match to not None
+    #         emoji_list.append(predefined_emojis[i])
+    #         continue
         
-        emoji_list.append(emoji)
+    #     emoji_list.append(emoji)
 
-        # endregion
+    #     # endregion
+# endregion
         
+
+
     # fuse emoji and text list together
     ret = []
     for i in range(0, len(text_list)):
         ret.append({"text":text_list[i], "emoji":emoji_list[i]})
-
-
     return ret
 
 
@@ -169,34 +177,30 @@ async def on_message(message):
     if not command_pattern.match(message.content):
         return
 
-    title = getTitle(message.content)
-    options = getOptions(message.content)
+    match_obj = re.search(command_beginning_pattern, message.content) # identify bound os title, to extract an string contining only the options # TODO rename
+    raw_option = message.content[match_obj.end()+1 : len(message.content)] # string only containing the options
+    
+    title = getTitle(message.content) # TOOD may add extra string based on match_obj
+    option_list = getOptions(raw_option)
 
     embed = discord.Embed(
         title = title,
-        # title = ,
         # description = "desc",
-        # url = ,
-        timestamp = datetime.datetime.now(),
-        # colour = ,
-    )
-    # embed_message.set_footer()
-    # embed_message.set_image()
+        timestamp = datetime.datetime.now())
     embed.set_author(
         name=message.author.display_name, 
         icon_url=message.author.avatar_url)
 
-    for option in options:
+    for option in option_list:
         embed.add_field(name=option["text"], value=option["emoji"], inline=False)
 
     react_message = await message.channel.send(embed=embed)
 
-    for option in options:
+    for option in option_list:
         await react_message.add_reaction(option["emoji"])
 
-# TODO check message shorter that 6000 characters
+# TODO check message longer that 6000 characters
 
-    # delete send command, to remove any 
-    await message.delete()
+    # await message.delete() # TODO uncomment
 
 client.run(token)
