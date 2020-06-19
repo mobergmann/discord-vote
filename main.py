@@ -16,7 +16,7 @@ option_pattern = re.compile("\[w+\]({.*})?")
 option_title_pattern = re.compile("(\[[\w]+\])")
 option_emoji_pattern = re.compile("({.*})?")
 
-# default emojis
+"""default emojis"""
 predefined_emojis = [
     "0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"
 ]
@@ -36,8 +36,18 @@ predefined_status = [
     "overthinking last bet"
 ]
 
-# TODO comment
-def extractBetween(input, start, start_delimiter, end_delimiter):
+def extractBetween(input: str, start: int, start_delimiter: str, end_delimiter: str) -> str:
+    """
+    Extracts a string, beginning with the start_delimiter and from the given start position to the end_delemiter.
+
+    :param str input: The input string, from which should be extracted.
+    :param int start: The start position, from which the next start_delemiter should be searched.
+    :param str start_delimiter: Notice, that the input hat to be a str of length 1. The Character, which marks the start of the word which should be extracted.
+    :param str end_delimiter: Notice, that the input hat to be a str of length 1. The Character, which marks the end of the word which should be extracted.
+    
+    TODO false/ throw if noring found
+    """
+
     inWord = False
     ret = ""
 
