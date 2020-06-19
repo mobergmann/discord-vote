@@ -60,7 +60,7 @@ def generateEmbed(title: str, author: discord.User, options: list):
         icon_url=author.avatar_url)
 
     for option in options:
-        embed.add_field(name=option[0], value=option[1], inline=False)
+        embed.add_field(name="\u200b", value=option[1] + option[0], inline=False)
 
     return embed
 
@@ -96,6 +96,6 @@ async def on_message(message):
 
 # TODO check message longer that 6000 characters
 
-    await message.delete() # TODO uncomment
+    await message.delete() # TODO uncomment # TODO catch
 
 client.run(token)
