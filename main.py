@@ -7,15 +7,27 @@ the command to create a new poll is:
 
 import datetime
 import discord
+from emoji import UNICODE_EMOJI
 import json
 import re
 
 pattern_command = re.compile("!(?:vote|poll) {([\w ]+)} ((?:\[[\w ]+\](?:{[^}]*})? ?){2,10})")
 pattern_option = re.compile("(\[[\w ]+\])({[^}]*})?")
+pattern_emoji = re.compile("")
 
 """default emojis"""
 predefined_emojis = [
-    "0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"
+    "0️⃣",
+    "1️⃣",
+    "2️⃣",
+    "3️⃣",
+    "4️⃣",
+    "5️⃣",
+    "6️⃣",
+    "7️⃣",
+    "8️⃣",
+    "9️⃣",
+    "🔟"
 ]
 
 predefined_status = [
@@ -33,7 +45,33 @@ predefined_status = [
     "overthinking last bet"
 ]
 
+def checkEmoji(emoji_to_check: str, position: int, server_emojis: list) -> str:
+    """
+    checks if the emoji is a valid emoji. if not returns a default emoji, based on the current position.
+    TODO add doc
+    """
+
+    if emoji_to_check in UNICODE_EMOJI: # if the given emoji is not in the default emoji set
+        return emoji_to_check
+        
+    if isServerEmoji(emoji_to_check, server_emojis): # if also not an custom server emoji
+        return emoji_to_check
+
+    return predefined_emojis[position] # set the default emoji
+    
+    
+
+def isServerEmoji(emoji_to_check: str, server_emojis: list) -> bool: 
+    for server_emoji in server_emojis:
+        constructed_emoji = "<:" + server_emoji.name + ":" + str(server_emoji.id) + ">"
+        constructed_emoji_animated = "<a:" + server_emoji.name + ":" + str(server_emoji.id) + ">"
+        if emoji_to_check == constructed_emoji or emoji_to_check == constructed_emoji_animated:
+            return True
+    return False
+
 def extractParams(input: str):
+    # TODO doc
+
     tmp_list_1 = re.findall(pattern_command, input)
     match = tmp_list_1[0]
 
@@ -46,11 +84,15 @@ def extractParams(input: str):
 
     options = []
     for option in pre_options:
-        options.append((option[0][1 : len(option[0])-1], option[1][1 : len(option[1])-1]))
+        name = option[0][1 : len(option[0])-1]
+        emoji = option[1][1 : len(option[1])-1]
+        options.append((name, emoji))
 
     return title, options
 
 def generateEmbed(title: str, author: discord.User, options: list):
+    # TODO doc
+
     embed = discord.Embed(
         title = title,
         # description = "desc",
@@ -60,7 +102,7 @@ def generateEmbed(title: str, author: discord.User, options: list):
         icon_url=author.avatar_url)
 
     for option in options:
-        embed.add_field(name="\u200b", value=option[1] + option[0], inline=False)
+        embed.add_field(name="\u200b", value=option[1] + " - " + option[0], inline=False)
 
     return embed
 
@@ -82,20 +124,26 @@ async def on_message(message):
     if not re.match(pattern_command, message.content): # command_pattern.match(message.content):
         return
 
+    await message.delete()
+
     param = extractParams(input=message.content)
 
     title = param[0]
     options = param[1]
-    embed = generateEmbed(title=title, author=message.author, options=options)
-    
 
-    react_message = await message.channel.send(embed=embed)
+    # checkEmoji
+    i = -1
+    for option in options:
+        i += 1
+        options[i] = (option[0], checkEmoji(emoji_to_check=option[1], position=i, server_emojis=message.guild.emojis))
+
+    embed = generateEmbed(title=title, author=message.author, options=options)
+
+    send_message = await message.channel.send(embed=embed)
 
     for option in options:
-        await react_message.add_reaction(option[1])
-
-# TODO check message longer that 6000 characters
-
-    await message.delete() # TODO uncomment # TODO catch
+        await send_message.add_reaction(option[1])
+        
+    # TODO check message longer that 6000 characters
 
 client.run(token)
