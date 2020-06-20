@@ -12,8 +12,8 @@ import json
 import re
 
 pattern_command = re.compile(
-    "!(?:vote|poll) {([\w ]+)} ((?:\[[\w ]+\](?:{[^}]*})? ?){2,10})")
-pattern_option = re.compile("(\[[\w ]+\])({[^}]*})?")
+    "^!(?:vote|poll) {([^}]+)} ((?:\[[^\]]+\](?:{[^}]*})? ?){2,10})$")
+pattern_option = re.compile("(\[[^\]]+\])({[^}]*})?")
 
 """default emojis"""
 predefined_emojis = [
@@ -104,6 +104,7 @@ def extractParams(input: str):
     for option in pre_options:
         name = option[0][1: len(option[0])-1]
         emoji = option[1][1: len(option[1])-1]
+        emoji = emoji.replace(" ", "")
         options.append((name, emoji))
 
     return title, options
