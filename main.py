@@ -104,7 +104,7 @@ def extractParams(input: str):
     for option in pre_options:
         name = option[0][1: len(option[0])-1]
         emoji = option[1][1: len(option[1])-1]
-        emoji = emoji.replace(" ", "")
+        emoji = emoji.replace(" ", "") # remove any spaces, for convenience purpose when typing the command
         options.append((name, emoji))
 
     return title, options
