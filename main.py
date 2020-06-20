@@ -152,29 +152,37 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
+    if message.author.bot:
+        return
     if not re.match(pattern_command, message.content):
         return
 
     await message.delete()
 
+    print("Incoming vote/ poll command from " + message.author.name + ":" + str(message.author.id) + " at " + str(datetime.datetime.now()))
     param = extractParams(input=message.content)
 
     title = param[0]
+    print("Title: '" + title, end="'\r\n")
     options = param[1]
 
+    print("Options: ", end="\r\n")
     # checkEmoji
     i = -1
     for option in options:
+        print("\tname='" + option[0] + "' emoji=" + option[1])
         i += 1
         options[i] = (option[0], checkEmoji(emoji_to_check=option[1],
                                             position=i, server_emojis=message.guild.emojis))
 
     embed = generateEmbed(title=title, author=message.author, options=options)
-
+    
     send_message = await message.channel.send(embed=embed)
+    print("Message send.")
 
     for option in options:
         await send_message.add_reaction(option[1])
+    print("Reacted with all emojis.")
 
     # TODO check message longer that 6000 characters
 
