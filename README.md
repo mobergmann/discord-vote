@@ -15,7 +15,7 @@ Replace `token_here` with your Bot token.
 I provide a self hosted version of the master branch.
 Please notice, that the Bot may not always be online.
 
-[Click me](https://discordapp.com/oauth2/authorize?client_id=722823450384662558&scope=bot&permissions=273472) to add the stable Bot to your Server. (Keep in mind, that the Bot currently logs for debugging purpose. This will be disables in the future)
+[Click me](https://discordapp.com/oauth2/authorize?client_id=722823450384662558&scope=bot&permissions=273472) to add the stable Bot to your Server.
 
 
 # Using the Bot:
