@@ -1,14 +1,50 @@
 # discord-vote
 A Vote/ Poll Bot for Discord
 
-# Host yourself
-create a `secrests.json` file and place your token. The File should look like this:
+
+# Goals
+- [x] Create a Poll
+  - [x] Custom Emojis
+- [ ] Evaluate a Poll
+  - [ ] Advanced Statistics (Image View)
+  - [ ] Sort by Role
+ 
+
+# Host Bot yourself
+
+## Install the necessary Libraries:
+```shell
+python3 -m pip install -U emoji
+python3 -m pip install -U discord.py
+```
+
+## Setup the Project
+```shell
+git clone https://github.com/mobergmann/discord-vote.git # clone project
+cd discord-vote/
+echo '{ "token": "" }' > secrets.json  # create secrets.json
+```
+
+Edit `secrets.json` and insert your Bot token (The Token can be acquired [here](https://discord.com/developers/applications)).
+The File should look like this:
 ```json
 {
     "token": "token_here"
 }
 ```
-Replace `token_here` with your Bot token.
+
+## Start the Bot
+### In Foreground
+To launch the application in Foreground use this command.
+```shell
+python3 main.py
+```
+
+### In Background
+One example on how to run the bot in the background, so it will keep running, even if the terminal is closed would be: 
+```shell
+nohup python3 main.py > /dev/null
+```
 
 
 # Adding the Bot
