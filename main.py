@@ -1,5 +1,5 @@
 """
-ith the bot you can create a poll using emojis to vote by reacting with them
+with the bot you can create a poll using emojis to vote by reacting with them
 
 the command to create a new poll is:
 !vote | !poll {a questionable topic to discuss with your friends} [Option A]{optional emoji to replace the current one} [Option B] ...
