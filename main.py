@@ -7,13 +7,10 @@ the command to create a new poll is:
 
 import datetime
 import discord
+from discord.ext import commands
 from emoji import UNICODE_EMOJI
 import json
 import re
-
-pattern_command = re.compile(
-    "^!(?:vote|poll) {([^}]+)} ((?:\[[^\]]+\](?:{[^}]*})? ?){2,10})$")
-pattern_option = re.compile("(\[[^\]]+\])({[^}]*})?")
 
 """default emojis"""
 predefined_emojis = [
@@ -30,6 +27,18 @@ predefined_emojis = [
     "🔟"
 ]
 
+pattern_vote_args = re.compile(
+    "^{([^}]+)} ((?:\[[^\]]+\](?:{[^}]*})? ?){2,10})$")
+pattern_vote_option = re.compile("(\[[^\]]+\])({[^}]*})?")
+
+client = commands.Bot(command_prefix="!")
+
+@client.event
+async def on_ready():
+    print('We have logged in as {0.user}'.format(client))
+
+
+# region helper functions
 
 def checkEmoji(emoji_to_check: str, position: int, server_emojis: list) -> str:
     """Checks if the emoji is a valid emoji.
@@ -84,18 +93,18 @@ def extractParams(input: str):
     The title is of type string, and the options is of type list, containing tuples with name and emoji.
 
     Args:
-        input (str): the message.content
+        input (str): the content of the message
 
     Returns:
         tuple: Returns a tuple, containing the title and a list of the options.
     """
 
-    tmp_list_1 = re.findall(pattern_command, input)
+    tmp_list_1 = re.findall(pattern_vote_args, input)
     match = tmp_list_1[0]
 
     title = match[0]
     tmp = match[1]
-    pre_options = re.findall(pattern_option, tmp)
+    pre_options = re.findall(pattern_vote_option, tmp)
 
     option_titles = []
     option_emojis = []
@@ -136,55 +145,64 @@ def generateEmbed(title: str, author: discord.User, options: list) -> discord.Em
 
     return embed
 
+# endregion
 
-"""" parse token from secrets.json"""
-with open("secrets.json") as json_data:
-    token = json.load(json_data)["token"]
+# region commands
 
-client = discord.Client()
-
-
-@client.event
-async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
-
-
-@client.event
-async def on_message(message):
-    if message.author == client.user:
+@client.command()
+async def vote(ctx, *, args):
+    # TODO use args instead of ctx.message.content
+    
+    if ctx.author == client.user:
         return
-    if message.author.bot:
+    if ctx.author.bot:
         return
-    if not re.match(pattern_command, message.content):
+    if not re.match(pattern_vote_args, args):
         return
 
-    await message.delete()
+    await ctx.message.delete() # clean message history
 
-    print("Incoming vote/ poll command from " + message.author.name + ":" + str(message.author.id) + " at " + str(datetime.datetime.now()))
-    param = extractParams(input=message.content)
+
+    param = extractParams(input=args)
 
     title = param[0]
-    print("Title: '" + title, end="'\r\n")
     options = param[1]
 
-    print("Options: ", end="\r\n")
     # checkEmoji
     i = -1
     for option in options:
-        print("\tname='" + option[0] + "' emoji=" + option[1])
         i += 1
         options[i] = (option[0], checkEmoji(emoji_to_check=option[1],
-                                            position=i, server_emojis=message.guild.emojis))
+                                            position=i, server_emojis=ctx.guild.emojis))
 
-    embed = generateEmbed(title=title, author=message.author, options=options)
+    embed = generateEmbed(title=title, author=ctx.author, options=options)
     
-    send_message = await message.channel.send(embed=embed)
-    print("Message send.")
-
+    send_message = await ctx.channel.send(embed=embed)
+    
     for option in options:
         await send_message.add_reaction(option[1])
-    print("Reacted with all emojis.")
+    
+    return
 
-    # TODO check message longer that 6000 characters
+@client.command()
+async def evaluate(ctx: str) -> str:
+    """returns a link to an image, which is postet into the changel with the message.
 
+    Args:
+        ctx (str): [description]
+
+    Returns:
+        str: [description]
+    """
+    pass
+
+# endregion
+
+# region starting the bot
+
+""""parse token from secrets.json"""
+with open("secrets.json") as json_data:
+    token = json.load(json_data)["token"]
 client.run(token)
+
+# endregion
