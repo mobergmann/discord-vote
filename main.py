@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 from emoji import UNICODE_EMOJI
 import json
+import matplotlib.pyplot as plt
 import re
 
 """default emojis"""
@@ -194,6 +195,19 @@ async def evaluate(ctx: str) -> str:
     Returns:
         str: [description]
     """
+
+    if ctx.author == client.user:
+        return
+    if ctx.author.bot:
+        return
+    if not re.match(pattern_vote_args, args):
+        return
+
+    await ctx.message.delete() # clean message history
+
+    
+
+
     pass
 
 # endregion
