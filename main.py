@@ -32,6 +32,9 @@ pattern_vote_args = re.compile(
     "^{([^}]+)} ((?:\[[^\]]+\](?:{[^}]*})? ?){2,10})$")
 pattern_vote_option = re.compile("(\[[^\]]+\])({[^}]*})?")
 
+pattern_evaluate_args = re.compile("(https://discordapp\.com/channels/[0-9]+/[0-9]+/[0-9]+)")
+pattern_message_link = re.compile("https://discordapp\.com/channels/([0-9]+)/([0-9]+)/([0-9]+)") # see https://regexr.com/577ud
+
 client = commands.Bot(command_prefix="!")
 
 @client.event
@@ -40,6 +43,42 @@ async def on_ready():
 
 
 # region helper functions
+
+# TODO doc
+async def extract_message_link_data(link: str, ctx) -> list:
+    """[summary]
+
+    Args:
+        link (str): [description]
+
+    Returns:
+        list: [description]
+    """
+
+    tmp = re.findall(pattern_message_link, link)
+    tmp = tmp[0]
+
+    # Check Guild
+    retrived_guild_id = int(tmp[0])
+    if retrived_guild_id != ctx.guild.id:
+        # TODO exception
+        return None
+    
+    channel_id = int(tmp[1])
+    retrived_channel = ctx.guild.get_channel(channel_id)
+    if retrived_channel == None:
+        # TODO exception
+        return None
+
+    message_id = int(tmp[2])
+    retrived_message = None
+    try:
+        retrived_message = await retrived_channel.fetch_message(message_id)
+    except:
+        # TODO exception
+        return None
+    
+    return (ctx.guild, retrived_channel, retrived_message)
 
 def checkEmoji(emoji_to_check: str, position: int, server_emojis: list) -> str:
     """Checks if the emoji is a valid emoji.
@@ -62,7 +101,6 @@ def checkEmoji(emoji_to_check: str, position: int, server_emojis: list) -> str:
         return emoji_to_check
 
     return predefined_emojis[position]  # set the default emoji
-
 
 def isServerEmoji(emoji_to_check: str, server_emojis: list) -> tuple:
     """Checks, if the Guild has the given emoji and if its available.
@@ -87,7 +125,6 @@ def isServerEmoji(emoji_to_check: str, server_emojis: list) -> tuple:
                 return False
             return True
     return False
-
 
 def extractParams(input: str):
     """Extracts the title and the options of the message content with the help of regex. 
@@ -118,7 +155,6 @@ def extractParams(input: str):
         options.append((name, emoji))
 
     return title, options
-
 
 def generateEmbed(title: str, author: discord.User, options: list) -> discord.Embed:
     """Generate an embed for the vote and returns the embed.
@@ -156,8 +192,6 @@ async def vote(ctx, *, args):
     
     if ctx.author == client.user:
         return
-    if ctx.author.bot:
-        return
     if not re.match(pattern_vote_args, args):
         return
 
@@ -186,7 +220,7 @@ async def vote(ctx, *, args):
     return
 
 @client.command()
-async def evaluate(ctx: str) -> str:
+async def evaluate(ctx, *, args):
     """returns a link to an image, which is postet into the changel with the message.
 
     Args:
@@ -196,19 +230,20 @@ async def evaluate(ctx: str) -> str:
         str: [description]
     """
 
-    if ctx.author == client.user:
+    if ctx.author == client.user: 
         return
-    if ctx.author.bot:
-        return
-    if not re.match(pattern_vote_args, args):
+    if not re.match(pattern_evaluate_args, args):
         return
 
     await ctx.message.delete() # clean message history
 
+    data = await extract_message_link_data(link=args, ctx=ctx)
+    message = data[2]
     
+    await ctx.channel.send(message.content)
 
 
-    pass
+
 
 # endregion
 
