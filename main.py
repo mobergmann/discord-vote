@@ -238,9 +238,12 @@ async def evaluate(ctx, *, args):
     await ctx.message.delete() # clean message history
 
     data = await extract_message_link_data(link=args, ctx=ctx)
-    message = data[2]
+    message = data[2].embeds[0]
     
-    await ctx.channel.send(message.content)
+    toSend = "Author: " + message.author.name + ",\r\nQuestion: '" + message.title + "',\r\nTimeStamp: " + str(message.timestamp) + ","
+    for field in message.fields:
+        toSend += ("\r\n\t" + field.value + " - " + field.name + ",")
+    await ctx.channel.send(toSend)
 
 
 
