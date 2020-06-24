@@ -32,9 +32,9 @@ pattern_vote_args = re.compile(
     "^{([^}]+)} ((?:\[[^\]]+\](?:{[^}]*})? ?){2,10})$")
 pattern_vote_option = re.compile("(\[[^\]]+\])({[^}]*})?")
 
-pattern_evaluate_args = re.compile("(https://discordapp\.com/channels/[0-9]+/[0-9]+/[0-9]+)")
-pattern_message_link = re.compile("https://discordapp\.com/channels/([0-9]+)/([0-9]+)/([0-9]+)") # see https://regexr.com/577ud
-
+pattern_evaluate_args = re.compile("(https://discordapp\.com/channels/(\d+)/(\d+)/(\d+))")
+pattern_message_link = re.compile("https://discordapp\.com/channels/(\d+)/(\d+)/(\d+)") # see https://regexr.com/577ud
+pattern_field_name = re.compile("") # for removing the emoji from the value of the embed
 client = commands.Bot(command_prefix="!")
 
 @client.event
@@ -79,6 +79,9 @@ async def extract_message_link_data(link: str, ctx) -> list:
         return None
     
     return (ctx.guild, retrived_channel, retrived_message)
+
+def removeEmojiFromString(input):
+    pass
 
 def checkEmoji(emoji_to_check: str, position: int, server_emojis: list) -> str:
     """Checks if the emoji is a valid emoji.
@@ -156,7 +159,7 @@ def extractParams(input: str):
 
     return title, options
 
-def generateEmbed(title: str, author: discord.User, options: list) -> discord.Embed:
+def generateVoteEmbed(title: str, author: discord.User, options: list) -> discord.Embed:
     """Generate an embed for the vote and returns the embed.
 
     Args:
@@ -179,6 +182,21 @@ def generateEmbed(title: str, author: discord.User, options: list) -> discord.Em
     for option in options:
         embed.add_field(
             name="\u200b", value=option[1] + " - " + option[0], inline=False)
+
+    return embed
+
+def generate_evaluation_embed(title: str, author: discord.User, results: list) -> discord.Embed:
+    embed = discord.Embed(
+        title=title,
+        # description = "desc",
+        timestamp=datetime.datetime.now())
+    embed.set_author(
+        name=author.display_name,
+        icon_url=author.avatar_url)
+
+    for result in results:
+        embed.add_field(
+            name="\u200b" + result[0], value=result[1], inline=False)
 
     return embed
 
@@ -210,7 +228,7 @@ async def vote(ctx, *, args):
         options[i] = (option[0], checkEmoji(emoji_to_check=option[1],
                                             position=i, server_emojis=ctx.guild.emojis))
 
-    embed = generateEmbed(title=title, author=ctx.author, options=options)
+    embed = generateVoteEmbed(title=title, author=ctx.author, options=options)
     
     send_message = await ctx.channel.send(embed=embed)
     
@@ -239,11 +257,23 @@ async def evaluate(ctx, *, args):
 
     data = await extract_message_link_data(link=args, ctx=ctx)
     message = data[2].embeds[0]
+    reactions = message.reactions
     
-    toSend = "Author: " + message.author.name + ",\r\nQuestion: '" + message.title + "',\r\nTimeStamp: " + str(message.timestamp) + ","
+    # options = []
+    # counter = -1
+    # for field in message.fields:
+    #     counter+=1
+    #     options.append((field.value, field.name[4:len(field.name)]))
+
+    results = []
+    counter = -1
     for field in message.fields:
-        toSend += ("\r\n\t" + field.value + " - " + field.name + ",")
-    await ctx.channel.send(toSend)
+        counter+=1
+        results.append((field.name, field.value))
+
+    embed = generate_evaluation_embed(title=message.title, author=message.author, results=results)
+    
+    await ctx.channel.send(embed=embed)
 
 
 
